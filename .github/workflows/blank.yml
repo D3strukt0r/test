@@ -29,4 +29,4 @@ jobs:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
         run: echo "$MATRIX_CONTEXT"
         
-      - run: echo "{{ github.event.repository.description }}"
+      - run: echo "${{ github.event.repository.description }}"
