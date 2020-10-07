@@ -1,0 +1,59 @@
+name: CI/CD
+
+env:
+  IMAGE_NAME: bungeecord
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  # https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#tojson
+  create-matrix:
+    runs-on: ubuntu-latest
+
+    name: Create Matrix
+
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+    steps:
+      - name: Create Matrix
+        id: set-matrix
+        run: |
+          default_versions=(
+              1119 # 1.7.10
+              701 # 1.6.4
+              666 # 1.6.2
+              548 # 1.5.2
+              386 # 1.5.0
+              251 # 1.4.7
+          )
+
+          if [ '${{ github.event_name }}' == 'push' ] && [ '${{ github.ref }}' == 'refs/heads/master' ]; then
+              versions=("${default_versions[@]}" 'lastStableBuild')
+          elif [ '${{ github.event_name }}' == 'push' ] && [ '${{ github.ref }}' == 'refs/heads/develop' ]; then
+              versions=lastStableBuild
+          elif [ '${{ github.event_name }}' == 'workflow_dispatch' ]; then
+              versions='${{ github.event.inputs.version }}'
+          else
+              exit 1
+          fi
+
+          versions_json=$(
+              printf '%s\n' "${versions[@]}" |
+              jq --raw-input . |
+              jq --compact-output --slurp '{bungeecord:.}'
+          )
+          echo "::set-output name=matrix::${versions_json}"
+          
+      - name: Build
+        # Builds before 680 had a different URL
+        if: matrix.bungeecord < 680
+        run: echo "Below 680"
+          
+      - name: Build
+        # Builds before 680 had a different URL
+        if: matrix.bungeecord >= 680
+        run: echo "Above 680"
