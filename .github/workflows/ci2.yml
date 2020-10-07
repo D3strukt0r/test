@@ -48,6 +48,18 @@ jobs:
           )
           echo "::set-output name=matrix::${versions_json}"
           
+  test:
+    needs: create-matrix
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
+
+    name: Test BungeeCord ${{ matrix.bungeecord }}
+    
+    steps:
       - name: Build
         # Builds before 680 had a different URL
         if: matrix.bungeecord < 680
