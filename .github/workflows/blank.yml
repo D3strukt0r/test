@@ -28,5 +28,9 @@ jobs:
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
         run: echo "$MATRIX_CONTEXT"
+      - name: Setup QEMU
+        id: qemu
+        uses: docker/setup-qemu-action@v1
+
         
       - run: echo "${{ github.event.repository.description }}"
