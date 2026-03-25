@@ -11,28 +11,37 @@ jobs:
     permissions:
       contents: none # Only setting contents — other permissions deliberately omitted
     steps:
-      - name: Check token permissions via API
+      - name: Test write operation (create and delete a label)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Job sets contents: none. If job overrides root, contents should be absent."
+          echo "Root sets issues: write. Job only sets contents: none."
+          echo "If job OVERRIDES root, issues: write should be gone and label creation will fail."
+          echo "If job MERGES with root, issues: write persists and label creation will succeed."
           echo ""
-          echo "=== Token permissions ==="
-          curl -s -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }} \
-            -w "\nHTTP status: %{http_code}\n" -o /tmp/repo.json
-          cat /tmp/repo.json | jq '.permissions // "no permissions field"'
-          echo ""
-          echo "=== Attempting authenticated contents API read ==="
-          HTTP_CODE=$(curl -s -o /tmp/contents.json -w "%{http_code}" \
+
+          echo "=== Attempting to create a temporary label (requires issues: write) ==="
+          HTTP_CODE=$(curl -s -o /tmp/label.json -w "%{http_code}" \
+            -X POST \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/contents/README.md")
-          echo "HTTP status: $HTTP_CODE"
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "SUCCESS: Contents API accessible (merge behavior or contents permission present)"
+            "https://api.github.com/repos/${{ github.repository }}/labels" \
+            -d '{"name":"_permissions-test-temp","color":"000000","description":"Temporary label for permissions test - safe to delete"}')
+          echo "Create label HTTP status: $HTTP_CODE"
+          cat /tmp/label.json | jq -r '.message // .name // "unknown response"'
+          echo ""
+
+          if [ "$HTTP_CODE" = "201" ]; then
+            echo "RESULT: Label created => issues: write is present => MERGE behavior (or issues inherited from root)"
+            echo "Cleaning up temporary label..."
+            curl -s -X DELETE \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/labels/_permissions-test-temp"
+            echo "Cleanup done."
+          elif [ "$HTTP_CODE" = "403" ] || [ "$HTTP_CODE" = "404" ]; then
+            echo "RESULT: Label creation failed ($HTTP_CODE) => issues: write is NOT present => OVERRIDE behavior"
           else
-            echo "FAILED: Contents API returned $HTTP_CODE (override behavior - contents: none took effect)"
-            cat /tmp/contents.json
+            echo "RESULT: Unexpected status $HTTP_CODE"
+            cat /tmp/label.json
           fi
