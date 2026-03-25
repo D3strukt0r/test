@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: none # Only setting contents — other permissions deliberately omitted
+      issues: write
     steps:
       - name: Test write operation (create and delete a label)
         env:
