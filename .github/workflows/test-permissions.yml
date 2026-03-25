@@ -4,6 +4,9 @@ on:
   push:
     branches: [master]
 
+permissions:
+  issues: write # Root sets issues: write, but job will set contents: none to test if it OVERRIDES or MERGES with root permissions
+
 jobs:
   test-override:
     name: Test if job permissions override root
