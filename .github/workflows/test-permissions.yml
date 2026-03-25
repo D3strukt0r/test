@@ -9,13 +9,13 @@ jobs:
     name: Test if job permissions override root
     runs-on: ubuntu-latest
     permissions:
-      issues: none # Only setting issues — pull-requests deliberately omitted2
+      contents: none # Only setting contents — other permissions deliberately omitted
     steps:
-      - name: Try listing PRs (should fail if job-level fully overrides root)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Root sets pull-requests: read, but job only sets issues: none."
-          echo "If job-level overrides root, pull-requests should be none and this will fail."
-          echo ""
-          gh issue list --repo ${{ github.repository }} && echo "SUCCESS: Issues listed (merge behavior)" || echo "FAILED: Cannot list issues (override behavior)"
+      - name: Try checkout (should fail if job-level fully overrides root)
+        uses: actions/checkout@v6
+      - name: Report success
+        if: success()
+        run: 'echo "SUCCESS: Checkout worked (merge behavior - contents inherited from root)"'
+      - name: Report failure
+        if: failure()
+        run: 'echo "FAILED: Checkout failed (override behavior - contents: none took effect)"'
