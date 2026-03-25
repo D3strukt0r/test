@@ -5,7 +5,7 @@ on:
 
 permissions:
   issues: read
-  pull-requests: read
+  pull-requests: none
 
 jobs:
   test-override:
