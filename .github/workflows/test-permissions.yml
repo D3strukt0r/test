@@ -1,0 +1,24 @@
+name: Test Permissions Override
+
+on:
+  workflow_dispatch:
+
+permissions:
+  issues: read
+  pull-requests: read
+
+jobs:
+  test-override:
+    name: Test if job permissions override root
+    runs-on: ubuntu-latest
+    permissions:
+      issues: none # Only setting issues — pull-requests deliberately omitted
+    steps:
+      - name: Try listing PRs (should fail if job-level fully overrides root)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Root sets pull-requests: read, but job only sets issues: none."
+          echo "If job-level overrides root, pull-requests should be none and this will fail."
+          echo ""
+          gh pr list --repo ${{ github.repository }} && echo "SUCCESS: PRs listed (merge behavior)" || echo "FAILED: Cannot list PRs (override behavior)"
