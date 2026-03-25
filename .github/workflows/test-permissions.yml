@@ -9,11 +9,11 @@ jobs:
     name: Test if job permissions override root
     runs-on: ubuntu-latest
     permissions:
-      issues: none # Only setting issues — pull-requests deliberately omitted
+      issues: none # Only setting issues — pull-requests deliberately omitted2
     steps:
       - name: Try listing PRs (should fail if job-level fully overrides root)
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Root sets pull-requests: read, but job only sets issues: none."
           echo "If job-level overrides root, pull-requests should be none and this will fail."
