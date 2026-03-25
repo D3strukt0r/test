@@ -11,11 +11,28 @@ jobs:
     permissions:
       contents: none # Only setting contents — other permissions deliberately omitted
     steps:
-      - name: Try checkout (should fail if job-level fully overrides root)
-        uses: actions/checkout@v6
-      - name: Report success
-        if: success()
-        run: 'echo "SUCCESS: Checkout worked (merge behavior - contents inherited from root)"'
-      - name: Report failure
-        if: failure()
-        run: 'echo "FAILED: Checkout failed (override behavior - contents: none took effect)"'
+      - name: Check token permissions via API
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Job sets contents: none. If job overrides root, contents should be absent."
+          echo ""
+          echo "=== Token permissions ==="
+          curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }} \
+            -w "\nHTTP status: %{http_code}\n" -o /tmp/repo.json
+          cat /tmp/repo.json | jq '.permissions // "no permissions field"'
+          echo ""
+          echo "=== Attempting authenticated contents API read ==="
+          HTTP_CODE=$(curl -s -o /tmp/contents.json -w "%{http_code}" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/contents/README.md")
+          echo "HTTP status: $HTTP_CODE"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "SUCCESS: Contents API accessible (merge behavior or contents permission present)"
+          else
+            echo "FAILED: Contents API returned $HTTP_CODE (override behavior - contents: none took effect)"
+            cat /tmp/contents.json
+          fi
