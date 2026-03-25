@@ -1,11 +1,8 @@
 name: Test Permissions Override
 
 on:
-  workflow_dispatch:
-
-permissions:
-  issues: read
-  pull-requests: none
+  push:
+    branches: [master]
 
 jobs:
   test-override:
@@ -21,4 +18,4 @@ jobs:
           echo "Root sets pull-requests: read, but job only sets issues: none."
           echo "If job-level overrides root, pull-requests should be none and this will fail."
           echo ""
-          gh pr list --repo ${{ github.repository }} && echo "SUCCESS: PRs listed (merge behavior)" || echo "FAILED: Cannot list PRs (override behavior)"
+          gh issue list --repo ${{ github.repository }} && echo "SUCCESS: Issues listed (merge behavior)" || echo "FAILED: Cannot list issues (override behavior)"
